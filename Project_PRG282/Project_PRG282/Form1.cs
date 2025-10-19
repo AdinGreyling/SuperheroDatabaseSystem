@@ -192,20 +192,171 @@ namespace Project_PRG282
             }
         }
 
-        // Placeholder methods for Day 3
+        // ====================== Update Functionality ======================
         private void btnUpdate_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Update functionality - Coming in Day 3", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (!ValidateInputs()) return;
+
+            if (!File.Exists(superheroesFile))
+            {
+                MessageBox.Show("No superheroes found to update.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            string[] lines = File.ReadAllLines(superheroesFile);
+            bool updated = false;
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string[] parts = lines[i].Split(',');
+                if (parts.Length < 7) continue;
+
+                if (parts[0] == txtHeroID.Text) 
+                {
+                    int age = int.Parse(txtAge.Text);
+                    int examScore = int.Parse(txtExamScore.Text);
+                    var (rank, threat) = CalculateRankAndThreat(examScore);
+
+                    lines[i] = $"{txtHeroID.Text},{txtName.Text},{age},{txtSuperpower.Text},{examScore},{rank},{threat}";
+                    updated = true;
+                    break;
+                }
+            }
+
+            if (updated)
+            {
+                File.WriteAllLines(superheroesFile, lines);
+                MessageBox.Show("Superhero updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoadSuperheroesIntoGrid();
+                ClearInputs();
+            }
+            else
+            {
+                MessageBox.Show("Hero ID not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
+        //=========Delete function=========
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Delete functionality - Coming in Day 3", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
+            
+            if (dgvSuperheroes.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a superhero to delete.", "No selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
 
+            
+            DataGridViewRow selectedRow = dgvSuperheroes.SelectedRows[0];
+            string heroID = selectedRow.Cells[0].Value?.ToString();
+            string heroName = selectedRow.Cells[1].Value?.ToString();
+
+            if (string.IsNullOrWhiteSpace(heroID))
+            {
+                MessageBox.Show("Invalid selection. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            
+            DialogResult confirm = MessageBox.Show(
+                $"Are you sure you want to delete hero '{heroName}' (ID: {heroID})?",
+                "Confirm Delete",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirm != DialogResult.Yes)
+                return;
+
+            try
+            {
+                
+                if (!File.Exists(superheroesFile))
+                {
+                    MessageBox.Show("No superhero file found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                List<string> allLines = File.ReadAllLines(superheroesFile).ToList();
+
+                
+                int removedCount = allLines.RemoveAll(line =>
+                {
+                    if (string.IsNullOrWhiteSpace(line)) return false;
+                    string[] parts = line.Split(',');
+                    if (parts.Length < 7) return false;
+                    return parts[0].Trim().Equals(heroID, StringComparison.OrdinalIgnoreCase);
+                });
+
+                
+                if (removedCount > 0)
+                {
+                    File.WriteAllLines(superheroesFile, allLines);
+                    LoadSuperheroesIntoGrid();
+                    MessageBox.Show($"Hero '{heroName}' deleted successfully.", "Deleted", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Hero not found in file (may already be deleted).", "Not Found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error deleting hero: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        
+        //===================Summary==================
         private void btnGenerate_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Report functionality - Coming in Day 3", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            try
+            {
+                // Load heroes
+                var heroes = new List<Hero>();
+                if (File.Exists(superheroesFile))
+                {
+                    heroes = File.ReadAllLines(superheroesFile)
+                                 .Select(line => Hero.FromLine(line))
+                                 .Where(h => h != null)
+                                 .ToList();
+                }
+
+                int total = heroes.Count;
+                double avgAge = total > 0 ? heroes.Average(h => h.Age) : 0.0;
+                double avgScore = total > 0 ? heroes.Average(h => h.ExamScore) : 0.0;
+
+
+                int sCount = heroes.Count(h => string.Equals(h.Rank, "S-Rank", StringComparison.OrdinalIgnoreCase));
+                int aCount = heroes.Count(h => string.Equals(h.Rank, "A-Rank", StringComparison.OrdinalIgnoreCase));
+                int bCount = heroes.Count(h => string.Equals(h.Rank, "B-Rank", StringComparison.OrdinalIgnoreCase));
+                int cCount = heroes.Count(h => string.Equals(h.Rank, "C-Rank", StringComparison.OrdinalIgnoreCase));
+
+                // Display to form
+                string summaryText =
+                $"========== Superhero Summary Report ==========\r\n" +
+                $"Date: {DateTime.Now:G}\r\n\r\n" +
+                $"Total superheroes: {total}\r\n" +
+                $"Average age: {avgAge:F2}\r\n" +
+                $"Average exam score: {avgScore:F2}\r\n\r\n" +
+                $"Heroes per rank:\r\n" +
+                $"   S-Rank: {sCount}\r\n" +
+                $"   A-Rank: {aCount}\r\n" +
+                $"   B-Rank: {bCount}\r\n" +
+                $"   C-Rank: {cCount}\r\n" +
+                $"=============================================\r\n";
+
+                txtReport.Text = summaryText;
+
+                
+                File.WriteAllText(summaryFile, summaryText);
+
+                
+                MessageBox.Show("Summary displayed and saved successfully!",
+                                "Summary", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error generating summary: {ex.Message}", "Summary Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

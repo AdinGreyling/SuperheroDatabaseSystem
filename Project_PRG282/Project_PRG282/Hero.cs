@@ -68,5 +68,36 @@ namespace Project_PRG282
                 ThreatLevel = parts[6].Trim()
             };
         }
+
+        // Format back to file line - Day 3 addition
+        public string ToLine()
+        {
+            return $"ID: {HeroID}; Name: {Name}; Age: {Age}; Superpower: {Superpower}; Exam score: {ExamScore}; Rank: {Rank}; Level of Threat: {ThreatLevel}";
+        }
+
+        // Recalculate rank and threat level - Day 3 addition
+        public void RecalculateRankAndThreat()
+        {
+            if (ExamScore >= 81) Rank = "S-Rank";
+            else if (ExamScore >= 61) Rank = "A-Rank";
+            else if (ExamScore >= 41) Rank = "B-Rank";
+            else Rank = "C-Rank";
+
+            switch (Rank)
+            {
+                case "S-Rank":
+                    ThreatLevel = "Finals Week (threat to the entire academy)";
+                    break;
+                case "A-Rank":
+                    ThreatLevel = "Midterm Madness (threat to a department)";
+                    break;
+                case "B-Rank":
+                    ThreatLevel = "Group Project Gone Wrong (threat to a study group)";
+                    break;
+                default:
+                    ThreatLevel = "Pop Quiz (potential threat to an individual student)";
+                    break;
+            }
+        }
     }
 }

@@ -15,14 +15,31 @@ namespace Project_PRG282
             InitializeComponent();
         }
 
+        //================Hero ID Modes=====================
+
+        private void SetAddMode()
+        {
+            txtHeroID.Enabled = false;
+            MessageBox.Show("Hero ID is auto-generated");
+            txtHeroID.Clear();
+            txtName.Clear();
+            txtAge.Clear();
+            txtSuperpower.Clear();
+            txtExamScore.Clear();
+        }
+        
+        private void SetUpdateMode()
+        {
+            txtHeroID.Enabled = true;
+            lblHeroID.Text = "Hero ID";
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
             EnsureColumns(); 
             dgvSuperheroes.CellClick += dgvSuperheroes_CellClick; 
             LoadSuperheroes();
-            
-            // Set default focus to Hero ID field for better user experience
-            txtHeroID.Focus();
+            SetAddMode();
         }
 
         
@@ -89,13 +106,12 @@ namespace Project_PRG282
             }
         }
 
-        private bool ValidateInputs()
+        private bool ValidateInputs(bool isAdding = false)
         {
             bool isValid = true;
-
-            if (string.IsNullOrWhiteSpace(txtHeroID.Text))
+            if (!isAdding && string.IsNullOrWhiteSpace(txtHeroID.Text))
             {
-                MessageBox.Show("Hero ID is required.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Hero ID is required for updates.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 isValid = false;
             }
             if (string.IsNullOrWhiteSpace(txtName.Text))
@@ -118,7 +134,6 @@ namespace Project_PRG282
                 MessageBox.Show("Exam Score must be an integer between 0 and 100.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 isValid = false;
             }
-
             return isValid;
         }
         
@@ -138,27 +153,42 @@ namespace Project_PRG282
             txtSuperpower.Clear();
             txtExamScore.Clear();
         }
+
+        private string GenerateUniqueHeroID()
+        {
+            string newID;
+            Random rand = new Random();
+            string[] existingIDs = File.Exists(superheroesFile) ? File.ReadAllLines(superheroesFile)
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .Select(line => line.Split(',')[0])
+                .ToArray() : Array.Empty<string>();
+
+            do
+            {
+                newID = rand.Next(10000, 99999).ToString("D5");
+            } while (existingIDs.Contains(newID));
+
+            return newID;
+        }
         
         //================Add superhero=====================
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            if (!ValidateInputs()) return;
-
+            SetAddMode();
+            if (!ValidateInputs(true)) return;
+            string heroID = GenerateUniqueHeroID();
             int age = int.Parse(txtAge.Text);
             int examScore = int.Parse(txtExamScore.Text);
             var (rank, threat) = CalculateRankAndThreat(examScore);
-
-            string record = $"{txtHeroID.Text},{txtName.Text},{age},{txtSuperpower.Text},{examScore},{rank},{threat}";
-
+            string record = $"{heroID},{txtName.Text},{age},{txtSuperpower.Text},{examScore},{rank},{threat}";
             try
             {
                 if (!File.Exists(superheroesFile))
                     File.Create(superheroesFile).Close();
-
                 File.AppendAllText(superheroesFile, record + Environment.NewLine);
                 MessageBox.Show("Superhero added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 ClearInputs();
-                LoadSuperheroesIntoGrid(); // Refresh the grid after adding
+                LoadSuperheroesIntoGrid();
             }
             catch (Exception ex)
             {
@@ -195,7 +225,8 @@ namespace Project_PRG282
         // ====================== Update Functionality ======================
         private void btnUpdate_Click(object sender, EventArgs e)
         {
-            if (!ValidateInputs()) return;
+            SetUpdateMode();
+            if (!ValidateInputs(false)) return;
 
             if (!File.Exists(superheroesFile))
             {

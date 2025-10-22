@@ -1,5 +1,12 @@
 # One Kick Heroes Academy - Superhero Management System
 
+by 
+
+Steven Riaan Piek 602240
+Adin Henry Greyling 603116
+Wildre Fourie 601625
+Ryno Martin Goetz 602306
+
 ## Project Overview
 
 This C# Windows Forms application manages superhero records for the One Kick Heroes Academy. The system tracks trainee heroes, automatically calculates their ranks based on exam scores, and generates comprehensive reports to support the academy's assessment process.
@@ -56,7 +63,7 @@ Project_PRG282_Final/
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone [your-github-repo-url]
+   git clone [https://github.com/AdinGreyling/SuperheroDatabaseSystem.git]
    cd Project_PRG282_Final
    ```
 
